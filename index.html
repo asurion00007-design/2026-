@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>2026 주간 운동 & 하체·코어 루틴 타이머</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-num {
+      font-family: 'Outfit', sans-serif;
+    }
+    /* SVG Circle animation */
+    .timer-ring-circle {
+      transition: stroke-dashoffset 0.25s linear, stroke 0.3s ease;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+          <i class="ph-bold ph-barbell text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">2026 피트니스 플래너</h1>
+          <p class="text-xs text-slate-500 font-medium">하체·코어 & 줄넘기 인터벌 루틴</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 md:gap-2">
+        <!-- 화면 꺼짐 방지 토글 버튼 -->
+        <button id="wakeLockBtn" onclick="toggleWakeLockManual()" class="h-10 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 text-xs font-semibold transition" title="화면 켜짐 유지">
+          <i id="wakeLockIcon" class="ph-bold ph-device-mobile text-lg"></i>
+          <span id="wakeLockText" class="hidden sm:inline">화면 켜짐 유지</span>
+        </button>
+        <!-- 시간/세트 커스텀 설정 버튼 -->
+        <button onclick="openSettingsModal()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition" title="시간 및 세트 설정">
+          <i class="ph-bold ph-gear text-xl"></i>
+        </button>
+        <!-- 소리 켜기/끄기 토글 -->
+        <button id="soundToggleBtn" onclick="toggleAudio()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition" title="음소거 토글">
+          <i id="soundIcon" class="ph-bold ph-speaker-high text-xl"></i>
+        </button>
+        <!-- 가이드 모달 -->
+        <button onclick="openRoutineInfoModal()" class="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition" title="루틴 정보">
+          <i class="ph-bold ph-info text-xl"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 컨테이너 -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4 md:py-6 space-y-6">
+
+    <!-- 통계 배너 요약 -->
+    <div class="grid grid-cols-3 gap-3">
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
+        <span class="text-xs text-slate-500 font-medium mb-1 flex items-center gap-1">
+          <i class="ph-fill ph-fire text-amber-500 text-sm"></i>이번달 칼로리
+        </span>
+        <span id="statMonthlyKcal" class="text-xl md:text-2xl font-bold font-num text-slate-900">0 <span class="text-xs font-normal text-slate-500 font-sans">kcal</span></span>
+      </div>
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
+        <span class="text-xs text-slate-500 font-medium mb-1 flex items-center gap-1">
+          <i class="ph-fill ph-check-circle text-emerald-500 text-sm"></i>완료한 일수
+        </span>
+        <span id="statMonthlyDays" class="text-xl md:text-2xl font-bold font-num text-slate-900">0 <span class="text-xs font-normal text-slate-500 font-sans">일</span></span>
+      </div>
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
+        <span class="text-xs text-slate-500 font-medium mb-1 flex items-center gap-1">
+          <i class="ph-fill ph-trend-up text-indigo-500 text-sm"></i>전체 달성률
+        </span>
+        <span id="statCompletionRate" class="text-xl md:text-2xl font-bold font-num text-slate-900">0<span class="text-xs font-normal text-slate-500 font-sans">%</span></span>
+      </div>
+    </div>
+
+    <!-- 2026 달력 섹션 -->
+    <section class="bg-white rounded-3xl border border-slate-200/80 p-4 md:p-6 shadow-sm">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <h2 id="calendarTitle" class="text-lg md:text-xl font-bold text-slate-900">2026년 1월</h2>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">2026 시즌</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="changeMonth(-1)" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition" aria-label="이전달">
+            <i class="ph-bold ph-caret-left text-lg"></i>
+          </button>
+          <button onclick="jumpToToday2026()" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+            오늘
+          </button>
+          <button onclick="changeMonth(1)" class="p-2 rounded-xl hover:bg-slate-100 text-slate-600 transition" aria-label="다음달">
+            <i class="ph-bold ph-caret-right text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 요일 헤더 -->
+      <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold py-2 border-b border-slate-100 text-slate-400">
+        <span class="text-rose-500">일</span>
+        <span>월</span>
+        <span>화</span>
+        <span>수</span>
+        <span>목</span>
+        <span>금</span>
+        <span class="text-blue-500">토</span>
+      </div>
+
+      <!-- 날짜 그리드 -->
+      <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 md:gap-2 mt-2">
+        <!-- JS 생성 -->
+      </div>
+
+      <!-- 범례 안내 -->
+      <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-500">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 월/수/금: 하체·코어
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> 화/목/토: 줄넘기
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> 일: 휴식 / 산책
+        </span>
+      </div>
+    </section>
+
+    <!-- 선택된 날짜 상세 & 오늘 운동 시작하기 카드 -->
+    <section id="selectedDateCard" class="bg-gradient-to-br from-white to-slate-50 rounded-3xl border border-slate-200 p-5 md:p-6 shadow-sm">
+      <!-- 동적 렌더링 -->
+    </section>
+  </main>
+
+  <!-- 전체화면 인터벌 타이머 모달 -->
+  <div id="timerModal" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-lg hidden flex-col justify-between p-4 md:p-8 text-white select-none">
+    
+    <!-- 타이머 헤더 바 -->
+    <div class="w-full max-w-xl mx-auto flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-2">
+          <span id="timerRoutineTag" class="text-xs uppercase tracking-wider font-semibold px-2.5 py-1 rounded-full bg-white/10 text-emerald-300">
+            월·수·금 하체 코어
+          </span>
+          <!-- 화면 꺼짐 방지 상태 표시 태그 -->
+          <span id="timerWakeLockStatus" class="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            <i class="ph-bold ph-sun text-xs animate-spin" style="animation-duration: 4s;"></i> 화면 켜짐 유지됨
+          </span>
+        </div>
+        <p id="timerOverallProgress" class="text-xs text-slate-400 mt-1 font-num">운동 1/6 • 총 소요 00:00</p>
+      </div>
+      <button onclick="confirmExitWorkout()" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition" title="운동 닫기">
+        <i class="ph-bold ph-x text-xl"></i>
+      </button>
+    </div>
+
+    <!-- 타이머 메인 뷰 -->
+    <div class="w-full max-w-md mx-auto flex flex-col items-center justify-center my-auto py-2">
+      <!-- 운동 상태 뱃지 (운동중 vs 휴식중) -->
+      <div id="timerStateBadge" class="px-4 py-1.5 rounded-full text-sm font-bold tracking-wide uppercase shadow-lg mb-2 bg-emerald-500 text-white">
+        운동 중 (EXERCISE)
+      </div>
+
+      <!-- 운동 이름 & 세트 정보 -->
+      <h3 id="timerExerciseTitle" class="text-2xl md:text-3xl font-extrabold text-center tracking-tight text-white mb-0.5">
+        맨몸 스쿼트
+      </h3>
+      <p id="timerSetSubtitle" class="text-sm font-medium text-slate-300 mb-2">
+        1세트 / 총 3세트
+      </p>
+
+      <!-- 일러스트 & 원형 프로그레스 SVG -->
+      <div class="relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center">
+        <!-- SVG 프로그레스 원 -->
+        <svg class="w-full h-full" viewBox="0 0 240 240">
+          <circle cx="120" cy="120" r="104" stroke="#334155" stroke-width="12" fill="transparent" />
+          <circle id="timerProgressRing" cx="120" cy="120" r="104" stroke="#10b981" stroke-width="12" stroke-linecap="round" fill="transparent" stroke-dasharray="653.45" stroke-dashoffset="0" class="timer-ring-circle" />
+        </svg>
+
+        <!-- 원형 내부 일러스트 & 남은 초 표시 -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+          <div id="exerciseSvgContainer" class="w-20 h-20 mb-1 flex items-center justify-center text-slate-200">
+            <!-- SVG 동적 삽입 -->
+          </div>
+          <!-- 카운트다운 숫자 -->
+          <div id="timerSeconds" class="text-5xl md:text-6xl font-black font-num tracking-tight text-white leading-none">
+            40
+          </div>
+          <span id="timerUnit" class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">SECONDS</span>
+        </div>
+      </div>
+
+      <!-- 실시간 시간 조정 버튼 (+5초 / -5초) -->
+      <div class="flex items-center gap-2 mt-3">
+        <button onclick="adjustCurrentSeconds(-5)" class="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-bold font-num text-slate-200 transition">
+          - 5초
+        </button>
+        <button onclick="adjustCurrentSeconds(5)" class="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-bold font-num text-emerald-300 transition">
+          + 5초
+        </button>
+        <button onclick="skipRestOrExercise()" id="timerFastSkipBtn" class="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-semibold text-slate-300 transition">
+          즉시 완료
+        </button>
+      </div>
+
+      <!-- 다음 운동 예고 -->
+      <div class="mt-3 px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-center max-w-xs w-full">
+        <span class="text-[11px] text-slate-400 block uppercase">다음 순서</span>
+        <span id="timerNextPreview" class="text-xs font-semibold text-slate-200 truncate block">2세트 (40초)</span>
+      </div>
+    </div>
+
+    <!-- 타이머 하단 메인 컨트롤러 -->
+    <div class="w-full max-w-md mx-auto flex items-center justify-center gap-4 pt-2">
+      <button onclick="prevStep()" class="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition" title="이전 세트">
+        <i class="ph-bold ph-skip-back text-xl"></i>
+      </button>
+
+      <button id="timerPlayPauseBtn" onclick="togglePlayPause()" class="w-16 h-16 rounded-3xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 flex items-center justify-center text-2xl font-bold shadow-lg shadow-emerald-500/30 transition">
+        <i id="timerPlayPauseIcon" class="ph-fill ph-pause"></i>
+      </button>
+
+      <button onclick="nextStep()" class="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition" title="다음 세트 건너뛰기">
+        <i class="ph-bold ph-skip-forward text-xl"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- 운동 시간 & 세트 커스텀 설정 모달 -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 md:p-5 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-base md:text-lg flex items-center gap-2">
+          <i class="ph-fill ph-sliders-horizontal text-emerald-500"></i> 운동 시간 & 세트 커스텀 설정
+        </h3>
+        <button onclick="closeSettingsModal()" class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-5 text-sm">
+        
+        <!-- 하체/코어 (월수금) 설정 -->
+        <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-emerald-900 text-sm flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 하체 & 코어 루틴 (월·수·금)
+            </span>
+          </div>
+
+          <!-- 운동 시간 -->
+          <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-100">
+            <span class="text-xs font-semibold text-slate-700">동작별 운동 시간</span>
+            <div class="flex items-center gap-2">
+              <button onclick="alterConfig('lower_core', 'workSeconds', -5)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">-</button>
+              <span id="cfg_lower_work" class="w-12 text-center font-bold font-num text-slate-900">40초</span>
+              <button onclick="alterConfig('lower_core', 'workSeconds', 5)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">+</button>
+            </div>
+          </div>
+
+          <!-- 휴식 시간 -->
+          <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-100">
+            <span class="text-xs font-semibold text-slate-700">세트 간 휴식 시간</span>
+            <div class="flex items-center gap-2">
+              <button onclick="alterConfig('lower_core', 'restSeconds', -5)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">-</button>
+              <span id="cfg_lower_rest" class="w-12 text-center font-bold font-num text-slate-900">20초</span>
+              <button onclick="alterConfig('lower_core', 'restSeconds', 5)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">+</button>
+            </div>
+          </div>
+
+          <!-- 세트 수 -->
+          <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-emerald-100">
+            <span class="text-xs font-semibold text-slate-700">동작당 세트 수</span>
+            <div class="flex items-center gap-2">
+              <button onclick="alterConfig('lower_core', 'sets', -1)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">-</button>
+              <span id="cfg_lower_sets" class="w-12 text-center font-bold font-num text-slate-900">3세트</span>
+              <button onclick="alterConfig('lower_core', 'sets', 1)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 줄넘기 (화목토) 설정 -->
+        <div class="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-blue-900 text-sm flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> 줄넘기 인터벌 (화·목·토)
+            </span>
+          </div>
+
+          <!-- 줄넘기 운동 시간 -->
+          <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-blue-100">
+            <span class="text-xs font-semibold text-slate-700">라운드별 줄넘기 시간</span>
+            <div class="flex items-center gap-2">
+              <button onclick="alterConfig('jump_rope', 'workSeconds', -10)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">-</button>
+              <span id="cfg_rope_work" class="w-12 text-center font-bold font-num text-slate-900">120초</span>
+              <button onclick="alterConfig('jump_rope', 'workSeconds', 10)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">+</button>
+            </div>
+          </div>
+
+          <!-- 줄넘기 휴식 시간 -->
+          <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-blue-100">
+            <span class="text-xs font-semibold text-slate-700">라운드 간 휴식 시간</span>
+            <div class="flex items-center gap-2">
+              <button onclick="alterConfig('jump_rope', 'restSeconds', -5)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">-</button>
+              <span id="cfg_rope_rest" class="w-12 text-center font-bold font-num text-slate-900">30초</span>
+              <button onclick="alterConfig('jump_rope', 'restSeconds', 5)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">+</button>
+            </div>
+          </div>
+
+          <!-- 총 라운드 수 -->
+          <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-blue-100">
+            <span class="text-xs font-semibold text-slate-700">총 진행 라운드</span>
+            <div class="flex items-center gap-2">
+              <button onclick="alterConfig('jump_rope', 'sets', -1)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">-</button>
+              <span id="cfg_rope_sets" class="w-12 text-center font-bold font-num text-slate-900">6회</span>
+              <button onclick="alterConfig('jump_rope', 'sets', 1)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold font-num">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+          💡 변경한 운동 시간 및 세트 수는 기기에 자동 저장되어 브라우저를 다시 켜도 유지됩니다.
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex gap-2">
+        <button onclick="resetSettingsToDefault()" class="flex-1 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs">
+          기본값으로 초기화
+        </button>
+        <button onclick="closeSettingsModal()" class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-500/25">
+          설정 완료
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 운동 완료 축하 모달 -->
+  <div id="congratsModal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl">
+      <div class="w-20 h-20 mx-auto rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-4xl mb-4">
+        🎉
+      </div>
+      <h3 class="text-2xl font-extrabold text-slate-900">오늘의 운동 완료!</h3>
+      <p class="text-sm text-slate-500 mt-1">대단해요! 오늘도 목표를 달성했습니다.</p>
+
+      <div class="grid grid-cols-2 gap-3 my-5">
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+          <span class="text-xs text-slate-400 block">소모 칼로리</span>
+          <span id="congratsKcal" class="text-xl font-bold font-num text-emerald-600">240 kcal</span>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+          <span class="text-xs text-slate-400 block">총 운동 시간</span>
+          <span id="congratsTime" class="text-xl font-bold font-num text-slate-800">18:00</span>
+        </div>
+      </div>
+
+      <button onclick="finishAndCloseCongrats()" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition shadow-lg shadow-emerald-500/25">
+        달력에 완료 기록 저장하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 주간 루틴 가이드 모달 -->
+  <div id="routineInfoModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-4 md:p-5 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-base md:text-lg flex items-center gap-2">
+          <i class="ph-fill ph-book-open text-emerald-500"></i> 주간 운동 & 하체·코어 루틴
+        </h3>
+        <button onclick="closeRoutineInfoModal()" class="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4 text-sm text-slate-600">
+        <div class="p-3.5 bg-blue-50/70 border border-blue-100 rounded-2xl">
+          <h4 class="font-bold text-blue-900 mb-1">📅 주간 구성</h4>
+          <ul class="text-xs text-blue-800 space-y-1">
+            <li>• <b>월·수·금</b>: 하체 근력 + 코어 (팔은 거의 쓰지 않아요!)</li>
+            <li>• <b>화·목·토</b>: 줄넘기 10~15분 (손목만 가볍게 사용, 어깨가 아프면 걷기)</li>
+            <li>• <b>일</b>: 완전 휴식 또는 가벼운 산책</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-slate-900 mb-2">하체 & 코어 6가지 동작</h4>
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
+              <div>
+                <b class="text-slate-800">1. 맨몸 스쿼트</b>
+                <p class="text-slate-500">대퇴사두근, 둔근 집중</p>
+              </div>
+              <span class="font-semibold text-slate-600">3세트 × 12~15회</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
+              <div>
+                <b class="text-slate-800">2. 리버스 런지</b>
+                <p class="text-slate-500">앞다리 엉덩이 집중 자극</p>
+              </div>
+              <span class="font-semibold text-slate-600">3세트 × 각 10회</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
+              <div>
+                <b class="text-slate-800">3. 글루트 브릿지</b>
+                <p class="text-slate-500">골반 들어올려 둔근 수축</p>
+              </div>
+              <span class="font-semibold text-slate-600">3세트 × 15회</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
+              <div>
+                <b class="text-slate-800">4. 힙 힌지 (굿모닝)</b>
+                <p class="text-slate-500">햄스트링과 척추기립근 강화</p>
+              </div>
+              <span class="font-semibold text-slate-600">3세트 × 12회</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
+              <div>
+                <b class="text-slate-800">5. 데드버그</b>
+                <p class="text-slate-500">허리를 바닥에 밀착한 코어 안정화</p>
+              </div>
+              <span class="font-semibold text-slate-600">3세트 × 각 8회</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex justify-between items-center">
+              <div>
+                <b class="text-slate-800">6. 플랭크 (무릎 대고)</b>
+                <p class="text-slate-500">골반 뒤로 당기고 복근 둥글게</p>
+              </div>
+              <span class="font-semibold text-slate-600">3세트 × 20~30초</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-amber-50 border border-amber-100 rounded-2xl text-xs text-amber-800 flex items-start gap-2">
+          <i class="ph-bold ph-alarm text-amber-600 text-base mt-0.5"></i>
+          <span><b>진행 팁:</b> 세트 사이 쉬는 시간 동안 호흡을 가다듬고, 나만의 속도로 바른 자세에 집중해보세요!</span>
+        </div>
+      </div>
+      <div class="p-4 bg-slate-50 border-t border-slate-100">
+        <button onclick="closeRoutineInfoModal()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold text-sm">
+          확인
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 안내 모달 -->
+  <div id="noticeModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-xs w-full p-5 text-center shadow-xl">
+      <div id="noticeIcon" class="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-2xl mx-auto mb-3">
+        ℹ️
+      </div>
+      <h4 id="noticeTitle" class="font-bold text-slate-900 text-base mb-1">알림</h4>
+      <p id="noticeMessage" class="text-xs text-slate-600 mb-4">메시지 내용</p>
+      <div id="noticeActions" class="flex gap-2 justify-center">
+        <button onclick="closeNoticeModal()" class="w-full py-2 rounded-xl bg-slate-800 text-white text-xs font-semibold">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. 운동 그래픽 SVG 정의
+       ========================================================================== */
+    const EXERCISE_SVGS = {
+      squat: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-emerald-400">
+          <circle cx="50" cy="22" r="7" class="fill-current" />
+          <path d="M50 29 L50 48 L68 55 L68 76" />
+          <path d="M50 48 L32 55 L32 76" />
+          <path d="M48 35 L76 35" />
+          <line x1="24" y1="76" x2="40" y2="76" />
+          <line x1="60" y1="76" x2="76" y2="76" />
+        </svg>
+      `,
+      reverse_lunge: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-emerald-400">
+          <circle cx="45" cy="20" r="7" class="fill-current" />
+          <path d="M45 27 L45 45 L62 58 L62 76" />
+          <path d="M45 45 L26 56 L26 76" />
+          <path d="M45 35 L50 50" />
+          <line x1="54" y1="76" x2="70" y2="76" />
+          <line x1="18" y1="76" x2="34" y2="76" />
+        </svg>
+      `,
+      glute_bridge: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-emerald-400">
+          <circle cx="25" cy="62" r="6" class="fill-current" />
+          <path d="M30 65 L48 48 L68 48 L78 68" />
+          <line x1="72" y1="68" x2="86" y2="68" />
+          <line x1="20" y1="68" x2="52" y2="68" />
+        </svg>
+      `,
+      hip_hinge: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-emerald-400">
+          <circle cx="65" cy="35" r="7" class="fill-current" />
+          <path d="M60 40 L44 48 L44 76" />
+          <path d="M44 48 L40 76" />
+          <path d="M52 42 L58 48" />
+          <line x1="32" y1="76" x2="52" y2="76" />
+        </svg>
+      `,
+      deadbug: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-emerald-400">
+          <circle cx="30" cy="68" r="6" class="fill-current" />
+          <line x1="36" y1="68" x2="68" y2="68" />
+          <path d="M46 68 L42 42" />
+          <path d="M62 68 L60 45 L76 45" />
+          <path d="M66 68 L78 80" />
+        </svg>
+      `,
+      knee_plank: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-emerald-400">
+          <circle cx="75" cy="50" r="6" class="fill-current" />
+          <line x1="70" y1="55" x2="38" y2="65" />
+          <path d="M65 56 L65 72" />
+          <line x1="60" y1="72" x2="72" y2="72" />
+          <path d="M38 65 L28 60" />
+          <line x1="24" y1="68" x2="44" y2="68" />
+        </svg>
+      `,
+      jump_rope: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-blue-400">
+          <circle cx="50" cy="24" r="7" class="fill-current" />
+          <path d="M50 31 L50 62 L44 80" />
+          <path d="M50 62 L56 80" />
+          <path d="M50 38 L36 46 L32 56" />
+          <path d="M50 38 L64 46 L68 56" />
+          <path d="M32 56 Q50 95 68 56" stroke-dasharray="3 2" />
+        </svg>
+      `,
+      rest_walk: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-amber-400">
+          <circle cx="50" cy="22" r="7" class="fill-current" />
+          <path d="M50 29 L50 54 L38 78" />
+          <path d="M50 54 L64 76" />
+          <path d="M50 36 L36 46" />
+          <path d="M50 36 L64 48" />
+        </svg>
+      `,
+      rest_break: `
+        <svg viewBox="0 0 100 100" class="w-20 h-20 stroke-current fill-none stroke-[3] stroke-linecap-round stroke-linejoin-round text-sky-300">
+          <path d="M30 40 L30 65 A16 16 0 0 0 62 65 L62 40 Z" />
+          <path d="M62 48 A8 8 0 0 1 74 54 A8 8 0 0 1 62 60" />
+          <path d="M40 32 Q44 24 40 18" stroke-dasharray="2 2" />
+          <path d="M52 32 Q56 24 52 18" stroke-dasharray="2 2" />
+        </svg>
+      `
+    };
+
+    /* ==========================================================================
+       2. 화면 꺼짐 방지 (Screen Wake Lock API)
+       ========================================================================== */
+    let wakeLockSentinel = null;
+    let isWakeLockRequested = true; // 기본 활성화
+
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          if (!wakeLockSentinel) {
+            wakeLockSentinel = await navigator.wakeLock.request('screen');
+            wakeLockSentinel.addEventListener('release', () => {
+              wakeLockSentinel = null;
+              updateWakeLockUI();
+            });
+          }
+          updateWakeLockUI();
+        } catch (err) {
+          console.warn('Wake Lock request failed:', err);
+          updateWakeLockUI();
+        }
+      } else {
+        updateWakeLockUI();
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (wakeLockSentinel) {
+        try {
+          await wakeLockSentinel.release();
+          wakeLockSentinel = null;
+        } catch (err) {
+          console.warn('Wake Lock release failed:', err);
+        }
+      }
+      updateWakeLockUI();
+    }
+
+    function toggleWakeLockManual() {
+      isWakeLockRequested = !isWakeLockRequested;
+      if (isWakeLockRequested) {
+        requestWakeLock();
+      } else {
+        releaseWakeLock();
+      }
+    }
+
+    function updateWakeLockUI() {
+      const btn = document.getElementById('wakeLockBtn');
+      const icon = document.getElementById('wakeLockIcon');
+      const text = document.getElementById('wakeLockText');
+      const timerStatus = document.getElementById('timerWakeLockStatus');
+
+      const isActive = !!wakeLockSentinel;
+
+      if (isActive) {
+        btn.className = 'h-10 px-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center gap-1.5 text-xs font-semibold transition';
+        icon.className = 'ph-fill ph-sun text-lg text-emerald-600 animate-spin';
+        icon.style.animationDuration = '8s';
+        text.textContent = '화면 켜짐 유지 중';
+        if (timerStatus) {
+          timerStatus.innerHTML = '<i class="ph-bold ph-sun text-xs"></i> 화면 켜짐 유지됨';
+          timerStatus.className = 'inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        }
+      } else {
+        btn.className = 'h-10 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 text-xs font-semibold transition';
+        icon.className = 'ph-bold ph-device-mobile text-lg';
+        icon.style.animationDuration = '';
+        text.textContent = '화면 켜짐 끔';
+        if (timerStatus) {
+          timerStatus.innerHTML = '<i class="ph-bold ph-moon text-xs"></i> 화면 켜짐 꺼짐';
+          timerStatus.className = 'inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600';
+        }
+      }
+    }
+
+    // 화면 포커스 복귀 시 재획득 처리
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && isWakeLockRequested) {
+        await requestWakeLock();
+      }
+    });
+
+    /* ==========================================================================
+       3. 사용자 정의 시간/세트 설정 관리 (Config)
+       ========================================================================== */
+    const CONFIG_STORAGE_KEY = 'workout_routine_custom_config_v1';
+    
+    // 기본 설정값 (사용자 요청: 하체 40초/20초/3세트, 줄넘기 2분/30초/6회)
+    const DEFAULT_CONFIG = {
+      lower_core: {
+        workSeconds: 40,
+        restSeconds: 20,
+        sets: 3
+      },
+      jump_rope: {
+        workSeconds: 120, // 2분
+        restSeconds: 30,  // 30초
+        sets: 6           // 6라운드
+      }
+    };
+
+    let userConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+
+    function loadConfig() {
+      try {
+        const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
+        if (raw) {
+          userConfig = Object.assign(JSON.parse(JSON.stringify(DEFAULT_CONFIG)), JSON.parse(raw));
+        }
+      } catch (e) {
+        userConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      }
+      renderConfigUI();
+    }
+
+    function saveConfig() {
+      try {
+        localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(userConfig));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function alterConfig(routineKey, prop, delta) {
+      if (!userConfig[routineKey]) return;
+      userConfig[routineKey][prop] += delta;
+
+      // 최소 제한
+      if (prop === 'workSeconds' && userConfig[routineKey][prop] < 10) userConfig[routineKey][prop] = 10;
+      if (prop === 'restSeconds' && userConfig[routineKey][prop] < 5) userConfig[routineKey][prop] = 5;
+      if (prop === 'sets' && userConfig[routineKey][prop] < 1) userConfig[routineKey][prop] = 1;
+
+      saveConfig();
+      renderConfigUI();
+      renderSelectedDateCard();
+    }
+
+    function resetSettingsToDefault() {
+      userConfig = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      saveConfig();
+      renderConfigUI();
+      renderSelectedDateCard();
+    }
+
+    function renderConfigUI() {
+      document.getElementById('cfg_lower_work').textContent = `${userConfig.lower_core.workSeconds}초`;
+      document.getElementById('cfg_lower_rest').textContent = `${userConfig.lower_core.restSeconds}초`;
+      document.getElementById('cfg_lower_sets').textContent = `${userConfig.lower_core.sets}세트`;
+
+      document.getElementById('cfg_rope_work').textContent = `${userConfig.jump_rope.workSeconds}초`;
+      document.getElementById('cfg_rope_rest').textContent = `${userConfig.jump_rope.restSeconds}초`;
+      document.getElementById('cfg_rope_sets').textContent = `${userConfig.jump_rope.sets}회`;
+    }
+
+    function openSettingsModal() {
+      renderConfigUI();
+      document.getElementById('settingsModal').classList.remove('hidden');
+      document.getElementById('settingsModal').classList.add('flex');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+      document.getElementById('settingsModal').classList.remove('flex');
+    }
+
+    /* ==========================================================================
+       4. 오디오 신디사이저 (Web Audio API)
+       ========================================================================== */
+    let audioCtx = null;
+    let isSoundEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleAudio() {
+      isSoundEnabled = !isSoundEnabled;
+      const icon = document.getElementById('soundIcon');
+      if (isSoundEnabled) {
+        icon.className = 'ph-bold ph-speaker-high text-xl';
+        playTone(660, 0.1, 'sine');
+      } else {
+        icon.className = 'ph-bold ph-speaker-slash text-xl text-slate-400';
+      }
+    }
+
+    function playTone(freq, duration = 0.15, type = 'sine', gainVal = 0.15) {
+      if (!isSoundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playCountdownBeep(isFinal = false) {
+      if (isFinal) {
+        playTone(880, 0.35, 'triangle', 0.25);
+      } else {
+        playTone(440, 0.12, 'sine', 0.18);
+      }
+    }
+
+    function playCheerChime() {
+      if (!isSoundEnabled) return;
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 0.3, 'triangle', 0.2), i * 140);
+      });
+    }
+
+    /* ==========================================================================
+       5. 2026 달력 엔진 및 완료 기록 관리
+       ========================================================================== */
+    const STORAGE_KEY = 'workout_planner_2026_records';
+    let workoutRecords = {};
+
+    function loadRecords() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) workoutRecords = JSON.parse(raw);
+      } catch (e) {
+        workoutRecords = {};
+      }
+    }
+
+    function saveRecords() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(workoutRecords));
+      } catch (e) {}
+    }
+
+    let currentYear = 2026;
+    let currentMonth = 0; // 1월
+    let selectedDateStr = '2026-01-05'; // 월요일
+
+    const realToday = new Date();
+    if (realToday.getFullYear() === 2026) {
+      currentMonth = realToday.getMonth();
+      selectedDateStr = formatDateKey(2026, currentMonth + 1, realToday.getDate());
+    } else {
+      currentMonth = 0;
+      selectedDateStr = '2026-01-05';
+    }
+
+    function formatDateKey(year, month, day) {
+      const m = String(month).padStart(2, '0');
+      const d = String(day).padStart(2, '0');
+      return `${year}-${m}-${d}`;
+    }
+
+    function getRoutineForDate(dateObj) {
+      const day = dateObj.getDay();
+      if (day === 1 || day === 3 || day === 5) {
+        const c = userConfig.lower_core;
+        const totalDurationSec = (c.workSeconds * c.sets * 6) + (c.restSeconds * (c.sets * 6 - 1));
+        const estMin = Math.round(totalDurationSec / 60);
+        const estKcal = Math.round(estMin * 12);
+        return {
+          id: 'lower_core',
+          category: 'lower_core',
+          name: '하체 근력 & 코어 루틴',
+          tag: '월·수·금 루틴',
+          sub: '팔은 거의 쓰지 않아요! (스쿼트, 런지, 브릿지 등 6가지)',
+          color: 'emerald',
+          badgeClass: 'bg-emerald-500 text-white',
+          estCalories: estKcal,
+          estDurationMin: estMin,
+          rule: `각 운동 ${c.workSeconds}초 + ${c.restSeconds}초 휴식 (${c.sets}세트씩)`
+        };
+      } else if (day === 2 || day === 4 || day === 6) {
+        const c = userConfig.jump_rope;
+        const totalDurationSec = (c.workSeconds * c.sets) + (c.restSeconds * (c.sets - 1));
+        const estMin = Math.round(totalDurationSec / 60);
+        const estKcal = Math.round(estMin * 14);
+        return {
+          id: 'jump_rope',
+          category: 'jump_rope',
+          name: '줄넘기 인터벌 루틴',
+          tag: '화·목·토 루틴',
+          sub: '손목만 가볍게 회전! (어깨 아프면 가벼운 걷기 대체)',
+          color: 'blue',
+          badgeClass: 'bg-blue-500 text-white',
+          estCalories: estKcal,
+          estDurationMin: estMin,
+          rule: `${Math.floor(c.workSeconds/60)}분 ${c.workSeconds%60 ? c.workSeconds%60+'초 ' : ''}운동 + ${c.restSeconds}초 휴식 (총 ${c.sets}회)`
+        };
+      } else {
+        return {
+          id: 'rest_walk',
+          category: 'rest_walk',
+          name: '완전 휴식 또는 가벼운 산책',
+          tag: '일요일 힐링',
+          sub: '무리하지 않고 신체 회복에 집중하는 날',
+          color: 'amber',
+          badgeClass: 'bg-amber-500 text-white',
+          estCalories: 80,
+          estDurationMin: 15,
+          rule: '컨디션 조절 & 가벼운 릴랙스 워킹'
+        };
+      }
+    }
+
+    function renderCalendar() {
+      document.getElementById('calendarTitle').textContent = `${currentYear}년 ${currentMonth + 1}월`;
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+      const lastDateOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'h-16 md:h-20 rounded-2xl bg-slate-50/50 opacity-30';
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= lastDateOfMonth; day++) {
+        const dateKey = formatDateKey(currentYear, currentMonth + 1, day);
+        const dateObj = new Date(currentYear, currentMonth, day);
+        const routine = getRoutineForDate(dateObj);
+        const isSelected = selectedDateStr === dateKey;
+        const record = workoutRecords[dateKey];
+        const isCompleted = !!(record && record.completed);
+
+        const cell = document.createElement('div');
+        cell.onclick = () => selectDate(dateKey);
+
+        let borderClass = isSelected ? 'ring-2 ring-emerald-500 border-transparent shadow-md' : 'border border-slate-200/70 hover:border-slate-300';
+        let badgeDot = '';
+        if (routine.category === 'lower_core') {
+          badgeDot = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>';
+        } else if (routine.category === 'jump_rope') {
+          badgeDot = '<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>';
+        } else {
+          badgeDot = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>';
+        }
+
+        let dayColor = 'text-slate-800';
+        const dayOfWeek = dateObj.getDay();
+        if (dayOfWeek === 0) dayColor = 'text-rose-600 font-semibold';
+        if (dayOfWeek === 6) dayColor = 'text-blue-600 font-semibold';
+
+        cell.className = `cursor-pointer h-16 md:h-20 p-1.5 rounded-2xl flex flex-col justify-between transition relative overflow-hidden bg-white ${borderClass}`;
+
+        cell.innerHTML = `
+          <div class="flex items-center justify-between w-full">
+            <span class="text-xs font-num ${dayColor}">${day}</span>
+            <div class="flex items-center gap-1">
+              ${badgeDot}
+            </div>
+          </div>
+
+          <div class="mt-auto">
+            ${isCompleted ? `
+              <div class="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 rounded-lg px-1 py-0.5 border border-emerald-200">
+                <i class="ph-fill ph-check-circle text-xs"></i>
+                <span class="truncate font-num">${record.calories || routine.estCalories}k</span>
+              </div>
+            ` : `
+              <span class="text-[9px] md:text-[10px] text-slate-400 truncate block">
+                ${routine.category === 'lower_core' ? '하체코어' : routine.category === 'jump_rope' ? '줄넘기' : '휴식'}
+              </span>
+            `}
+          </div>
+        `;
+
+        grid.appendChild(cell);
+      }
+
+      updateSummaryStats();
+      renderSelectedDateCard();
+    }
+
+    function selectDate(dateKey) {
+      selectedDateStr = dateKey;
+      renderCalendar();
+    }
+
+    function changeMonth(delta) {
+      currentMonth += delta;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear -= 1;
+      } else if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear += 1;
+      }
+      selectedDateStr = formatDateKey(currentYear, currentMonth + 1, 1);
+      renderCalendar();
+    }
+
+    function jumpToToday2026() {
+      currentYear = 2026;
+      currentMonth = 0;
+      selectedDateStr = '2026-01-05';
+      renderCalendar();
+    }
+
+    function updateSummaryStats() {
+      const yearMonthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+      let totalKcal = 0;
+      let completedDays = 0;
+
+      Object.keys(workoutRecords).forEach(key => {
+        if (key.startsWith(yearMonthPrefix) && workoutRecords[key].completed) {
+          completedDays++;
+          totalKcal += (workoutRecords[key].calories || 0);
+        }
+      });
+
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const rate = Math.round((completedDays / daysInMonth) * 100);
+
+      document.getElementById('statMonthlyKcal').innerHTML = `${totalKcal.toLocaleString()} <span class="text-xs font-normal text-slate-500 font-sans">kcal</span>`;
+      document.getElementById('statMonthlyDays').innerHTML = `${completedDays} <span class="text-xs font-normal text-slate-500 font-sans">일</span>`;
+      document.getElementById('statCompletionRate').innerHTML = `${rate}<span class="text-xs font-normal text-slate-500 font-sans">%</span>`;
+    }
+
+    function renderSelectedDateCard() {
+      const card = document.getElementById('selectedDateCard');
+      const [y, m, d] = selectedDateStr.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const dayNames = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+      const dayStr = dayNames[dateObj.getDay()];
+      const routine = getRoutineForDate(dateObj);
+      const record = workoutRecords[selectedDateStr];
+      const isCompleted = !!(record && record.completed);
+
+      card.innerHTML = `
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${routine.badgeClass}">
+                ${routine.tag}
+              </span>
+              <span class="text-xs text-slate-500 font-medium font-num">
+                ${y}년 ${m}월 ${d}일 (${dayStr})
+              </span>
+            </div>
+            <h3 class="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-2">
+              ${routine.name}
+              ${isCompleted ? '<span class="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full"><i class="ph-fill ph-check-circle mr-1"></i> 완료됨</span>' : ''}
+            </h3>
+            <p class="text-xs md:text-sm text-slate-500 mt-1">
+              ${routine.sub}
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="bg-white px-3.5 py-2 rounded-2xl border border-slate-200 text-center">
+              <span class="text-[11px] text-slate-400 block font-medium">예상 칼로리</span>
+              <span class="text-base font-bold font-num text-amber-500 flex items-center justify-center gap-0.5">
+                <i class="ph-fill ph-fire text-sm"></i> ${record?.calories || routine.estCalories} kcal
+              </span>
+            </div>
+            
+            <button onclick="startRoutineForSelectedDate()" class="flex-1 md:flex-none px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold shadow-lg shadow-emerald-500/25 active:scale-95 transition flex items-center justify-center gap-2">
+              <i class="ph-fill ph-play text-lg"></i>
+              <span>오늘의 운동 시작하기</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-slate-200/80">
+          <div class="flex items-center justify-between mb-3 text-xs font-semibold text-slate-600">
+            <span>설정된 규칙: ${routine.rule}</span>
+            <button onclick="openSettingsModal()" class="text-emerald-600 hover:underline flex items-center gap-1 font-semibold">
+              <i class="ph-bold ph-pencil-simple"></i> 시간/세트 변경
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+            ${getRoutineItemPreviews(routine.category)}
+          </div>
+        </div>
+      `;
+    }
+
+    function getRoutineItemPreviews(category) {
+      if (category === 'lower_core') {
+        const c = userConfig.lower_core;
+        const list = [
+          { name: '1. 맨몸 스쿼트', rep: `${c.sets}세트 × ${c.workSeconds}초`, svg: EXERCISE_SVGS.squat },
+          { name: '2. 리버스 런지', rep: `${c.sets}세트 × ${c.workSeconds}초`, svg: EXERCISE_SVGS.reverse_lunge },
+          { name: '3. 글루트 브릿지', rep: `${c.sets}세트 × ${c.workSeconds}초`, svg: EXERCISE_SVGS.glute_bridge },
+          { name: '4. 힙 힌지(굿모닝)', rep: `${c.sets}세트 × ${c.workSeconds}초`, svg: EXERCISE_SVGS.hip_hinge },
+          { name: '5. 데드버그', rep: `${c.sets}세트 × ${c.workSeconds}초`, svg: EXERCISE_SVGS.deadbug },
+          { name: '6. 플랭크(무릎대고)', rep: `${c.sets}세트 × ${c.workSeconds}초`, svg: EXERCISE_SVGS.knee_plank }
+        ];
+        return list.map(item => `
+          <div class="bg-white/80 p-2.5 rounded-xl border border-slate-200/70 flex flex-col items-center text-center">
+            <div class="w-12 h-12 flex items-center justify-center text-slate-700">
+              ${item.svg}
+            </div>
+            <span class="text-xs font-bold text-slate-800 mt-1 truncate w-full">${item.name}</span>
+            <span class="text-[10px] text-slate-400">${item.rep}</span>
+          </div>
+        `).join('');
+      } else if (category === 'jump_rope') {
+        const c = userConfig.jump_rope;
+        return `
+          <div class="col-span-full bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0">
+              ${EXERCISE_SVGS.jump_rope}
+            </div>
+            <div>
+              <h5 class="text-sm font-bold text-blue-950">줄넘기 인터벌 루틴 (총 ${c.sets}라운드)</h5>
+              <p class="text-xs text-blue-700 mt-0.5">손목만 가볍게 회전하며 진행합니다. (어깨 통증 시 빠른 걷기)</p>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="text-[11px] px-2 py-0.5 rounded bg-blue-200/60 font-semibold text-blue-900 font-num">운동 ${c.workSeconds}초</span>
+                <span class="text-[11px] px-2 py-0.5 rounded bg-slate-200/70 font-semibold text-slate-700 font-num">휴식 ${c.restSeconds}초</span>
+                <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-200/60 font-semibold text-emerald-900 font-num">총 ${c.sets}회</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="col-span-full bg-amber-50/50 p-4 rounded-2xl border border-amber-100 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+              ${EXERCISE_SVGS.rest_walk}
+            </div>
+            <div>
+              <h5 class="text-sm font-bold text-amber-950">일요일: 완전 휴식 또는 가벼운 산책</h5>
+              <p class="text-xs text-amber-800 mt-0.5">주중 운동으로 지친 하체와 코어 근육을 충분히 회복하고 가벼운 스트레칭을 해주세요.</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    /* ==========================================================================
+       6. 인터벌 타이머 시퀀스 및 실시간 초 조정
+       ========================================================================== */
+    let timerSteps = [];
+    let currentStepIndex = 0;
+    let timeRemaining = 0;
+    let currentStepDuration = 0;
+    let totalElapsedSeconds = 0;
+    let timerInterval = null;
+    let isTimerRunning = false;
+    let activeRoutineCategory = '';
+    const RING_CIRCUMFERENCE = 2 * Math.PI * 104;
+
+    function buildWorkoutSequence(category) {
+      const steps = [];
+
+      if (category === 'lower_core') {
+        const c = userConfig.lower_core;
+        const exercises = [
+          { name: '맨몸 스쿼트', svg: 'squat' },
+          { name: '리버스 런지', svg: 'reverse_lunge' },
+          { name: '글루트 브릿지', svg: 'glute_bridge' },
+          { name: '힙 힌지 (굿모닝)', svg: 'hip_hinge' },
+          { name: '데드버그', svg: 'deadbug' },
+          { name: '플랭크 (무릎 대고)', svg: 'knee_plank' }
+        ];
+
+        exercises.forEach((ex, exIdx) => {
+          for (let s = 1; s <= c.sets; s++) {
+            // 운동 스텝
+            steps.push({
+              type: 'work',
+              exerciseName: ex.name,
+              setIndex: s,
+              totalSets: c.sets,
+              duration: c.workSeconds,
+              svgKey: ex.svg,
+              overallExerciseIndex: exIdx + 1,
+              totalExercises: exercises.length
+            });
+
+            // 마지막 운동의 마지막 세트가 아니라면 휴식
+            const isLast = (exIdx === exercises.length - 1) && (s === c.sets);
+            if (!isLast) {
+              steps.push({
+                type: 'rest',
+                exerciseName: `${ex.name} 휴식`,
+                nextExerciseName: s === c.sets ? exercises[exIdx + 1].name : `${ex.name} (${s + 1}세트)`,
+                setIndex: s,
+                totalSets: c.sets,
+                duration: c.restSeconds,
+                svgKey: 'rest_break',
+                overallExerciseIndex: exIdx + 1,
+                totalExercises: exercises.length
+              });
+            }
+          }
+        });
+      } else if (category === 'jump_rope') {
+        const c = userConfig.jump_rope;
+        for (let r = 1; r <= c.sets; r++) {
+          steps.push({
+            type: 'work',
+            exerciseName: `줄넘기 인터벌 (${r}R)`,
+            setIndex: r,
+            totalSets: c.sets,
+            duration: c.workSeconds,
+            svgKey: 'jump_rope',
+            overallExerciseIndex: r,
+            totalExercises: c.sets
+          });
+
+          if (r < c.sets) {
+            steps.push({
+              type: 'rest',
+              exerciseName: '호흡 가다듬기 (휴식)',
+              nextExerciseName: `줄넘기 인터벌 (${r + 1}R)`,
+              setIndex: r,
+              totalSets: c.sets,
+              duration: c.restSeconds,
+              svgKey: 'rest_break',
+              overallExerciseIndex: r,
+              totalExercises: c.sets
+            });
+          }
+        }
+      } else {
+        steps.push({
+          type: 'work',
+          exerciseName: '가벼운 산책 & 릴랙스',
+          setIndex: 1,
+          totalSets: 1,
+          duration: 900,
+          svgKey: 'rest_walk',
+          overallExerciseIndex: 1,
+          totalExercises: 1
+        });
+      }
+
+      return steps;
+    }
+
+    async function startRoutineForSelectedDate() {
+      initAudio();
+      
+      // 운동 시작 시 자동으로 화면 꺼짐 방지 활성화
+      if (isWakeLockRequested) {
+        await requestWakeLock();
+      }
+
+      const [y, m, d] = selectedDateStr.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const routine = getRoutineForDate(dateObj);
+
+      activeRoutineCategory = routine.category;
+      timerSteps = buildWorkoutSequence(routine.category);
+      currentStepIndex = 0;
+      totalElapsedSeconds = 0;
+
+      const modal = document.getElementById('timerModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      document.getElementById('timerRoutineTag').textContent = routine.name;
+
+      loadStep(0);
+      startTimer();
+    }
+
+    function loadStep(index) {
+      if (index >= timerSteps.length) {
+        completeWorkoutSession();
+        return;
+      }
+
+      currentStepIndex = index;
+      const step = timerSteps[currentStepIndex];
+      timeRemaining = step.duration;
+      currentStepDuration = step.duration;
+
+      updateTimerUI(step);
+    }
+
+    function updateTimerUI(step) {
+      const isWork = step.type === 'work';
+      const badge = document.getElementById('timerStateBadge');
+      const ring = document.getElementById('timerProgressRing');
+      const title = document.getElementById('timerExerciseTitle');
+      const sub = document.getElementById('timerSetSubtitle');
+      const nextPreview = document.getElementById('timerNextPreview');
+      const svgBox = document.getElementById('exerciseSvgContainer');
+      const progressOverall = document.getElementById('timerOverallProgress');
+      const skipBtn = document.getElementById('timerFastSkipBtn');
+
+      if (isWork) {
+        badge.textContent = '운동 진행 중 (WORK)';
+        badge.className = 'px-4 py-1 rounded-full text-xs font-bold tracking-wide uppercase shadow-lg mb-2 bg-emerald-500 text-white';
+        ring.setAttribute('stroke', '#10b981');
+        title.textContent = step.exerciseName;
+        sub.textContent = `${step.setIndex}세트 / 총 ${step.totalSets}세트`;
+        skipBtn.textContent = '세트 완료';
+      } else {
+        badge.textContent = '휴식 시간 (REST)';
+        badge.className = 'px-4 py-1 rounded-full text-xs font-bold tracking-wide uppercase shadow-lg mb-2 bg-sky-500 text-white animate-pulse';
+        ring.setAttribute('stroke', '#0ea5e9');
+        title.textContent = '숨 고르기 (휴식)';
+        sub.textContent = `다음 운동 준비 • ${step.duration}초 휴식`;
+        skipBtn.textContent = '휴식 건너뛰기';
+      }
+
+      const nextStep = timerSteps[currentStepIndex + 1];
+      if (nextStep) {
+        if (nextStep.type === 'work') {
+          nextPreview.textContent = `${nextStep.exerciseName} (${nextStep.setIndex}세트 • ${nextStep.duration}초)`;
+        } else {
+          nextPreview.textContent = `휴식 (${nextStep.duration}초)`;
+        }
+      } else {
+        nextPreview.textContent = '마지막 세트! 거의 끝났습니다!';
+      }
+
+      const currentExNo = step.overallExerciseIndex || 1;
+      const totalExNo = step.totalExercises || 1;
+      const elapsedMin = String(Math.floor(totalElapsedSeconds / 60)).padStart(2, '0');
+      const elapsedSec = String(totalElapsedSeconds % 60).padStart(2, '0');
+      progressOverall.textContent = `운동 ${currentExNo}/${totalExNo} • 누적 시간 ${elapsedMin}:${elapsedSec}`;
+
+      svgBox.innerHTML = EXERCISE_SVGS[step.svgKey] || EXERCISE_SVGS.squat;
+
+      renderSecondsAndRing();
+    }
+
+    function renderSecondsAndRing() {
+      const secEl = document.getElementById('timerSeconds');
+      const ring = document.getElementById('timerProgressRing');
+
+      secEl.textContent = timeRemaining;
+
+      const progress = currentStepDuration > 0 ? (currentStepDuration - timeRemaining) / currentStepDuration : 1;
+      const offset = RING_CIRCUMFERENCE * (1 - Math.min(1, Math.max(0, progress)));
+      ring.style.strokeDasharray = `${RING_CIRCUMFERENCE}`;
+      ring.style.strokeDashoffset = `${offset}`;
+    }
+
+    // 실시간 +5초 / -5초 조정 기능
+    function adjustCurrentSeconds(delta) {
+      timeRemaining += delta;
+      if (timeRemaining < 1) timeRemaining = 1;
+      currentStepDuration = Math.max(currentStepDuration, timeRemaining);
+      renderSecondsAndRing();
+      playTone(delta > 0 ? 600 : 400, 0.08, 'sine', 0.1);
+    }
+
+    function skipRestOrExercise() {
+      timeRemaining = 1;
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      isTimerRunning = true;
+      updatePlayPauseButton();
+
+      timerInterval = setInterval(() => {
+        totalElapsedSeconds++;
+
+        if (timeRemaining > 1) {
+          timeRemaining--;
+          if (timeRemaining <= 3) {
+            playCountdownBeep(false);
+          }
+          renderSecondsAndRing();
+        } else {
+          playCountdownBeep(true);
+          nextStep();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isTimerRunning = false;
+      updatePlayPauseButton();
+    }
+
+    function togglePlayPause() {
+      if (isTimerRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function updatePlayPauseButton() {
+      const icon = document.getElementById('timerPlayPauseIcon');
+      if (isTimerRunning) {
+        icon.className = 'ph-fill ph-pause';
+      } else {
+        icon.className = 'ph-fill ph-play';
+      }
+    }
+
+    function nextStep() {
+      if (currentStepIndex < timerSteps.length - 1) {
+        loadStep(currentStepIndex + 1);
+      } else {
+        completeWorkoutSession();
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIndex > 0) {
+        loadStep(currentStepIndex - 1);
+      } else {
+        timeRemaining = timerSteps[0].duration;
+        renderSecondsAndRing();
+      }
+    }
+
+    function confirmExitWorkout() {
+      pauseTimer();
+      showNotice(
+        '운동을 중단하시겠습니까?',
+        '지금 멈추시면 운동 기록이 저장되지 않습니다.',
+        '계속하기',
+        '운동 종료',
+        () => {
+          startTimer();
+          closeNoticeModal();
+        },
+        () => {
+          closeTimerModal();
+          closeNoticeModal();
+        }
+      );
+    }
+
+    function closeTimerModal() {
+      pauseTimer();
+      const modal = document.getElementById('timerModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function completeWorkoutSession() {
+      pauseTimer();
+      closeTimerModal();
+
+      playCheerChime();
+      try {
+        confetti({
+          particleCount: 110,
+          spread: 80,
+          origin: { y: 0.6 }
+        });
+      } catch (e) {}
+
+      const routine = getRoutineForDate(new Date(selectedDateStr));
+      const burnedKcal = routine.estCalories;
+      const elapsedMin = Math.max(1, Math.round(totalElapsedSeconds / 60));
+
+      document.getElementById('congratsKcal').textContent = `${burnedKcal} kcal`;
+      document.getElementById('congratsTime').textContent = `${elapsedMin}분`;
+
+      const congratsModal = document.getElementById('congratsModal');
+      congratsModal.classList.remove('hidden');
+      congratsModal.classList.add('flex');
+    }
+
+    function finishAndCloseCongrats() {
+      const congratsModal = document.getElementById('congratsModal');
+      congratsModal.classList.add('hidden');
+      congratsModal.classList.remove('flex');
+
+      const routine = getRoutineForDate(new Date(selectedDateStr));
+      workoutRecords[selectedDateStr] = {
+        completed: true,
+        calories: routine.estCalories,
+        category: activeRoutineCategory,
+        timestamp: new Date().toISOString()
+      };
+      saveRecords();
+      renderCalendar();
+    }
+
+    /* ==========================================================================
+       7. 모달 유틸리티
+       ========================================================================== */
+    function openRoutineInfoModal() {
+      document.getElementById('routineInfoModal').classList.remove('hidden');
+      document.getElementById('routineInfoModal').classList.add('flex');
+    }
+
+    function closeRoutineInfoModal() {
+      document.getElementById('routineInfoModal').classList.add('hidden');
+      document.getElementById('routineInfoModal').classList.remove('flex');
+    }
+
+    function showNotice(title, message, cancelText, confirmText, onCancel, onConfirm) {
+      const modal = document.getElementById('noticeModal');
+      document.getElementById('noticeTitle').textContent = title;
+      document.getElementById('noticeMessage').textContent = message;
+
+      const actions = document.getElementById('noticeActions');
+      actions.innerHTML = `
+        <button id="noticeCancelBtn" class="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold">${cancelText || '취소'}</button>
+        <button id="noticeConfirmBtn" class="flex-1 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold">${confirmText || '확인'}</button>
+      `;
+
+      document.getElementById('noticeCancelBtn').onclick = onCancel || closeNoticeModal;
+      document.getElementById('noticeConfirmBtn').onclick = onConfirm || closeNoticeModal;
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeNoticeModal() {
+      const modal = document.getElementById('noticeModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    /* ==========================================================================
+       8. 초기화
+       ========================================================================== */
+    window.onload = function() {
+      loadRecords();
+      loadConfig();
+      renderCalendar();
+      updateWakeLockUI();
+    };
+  </script>
+</body>
+</html>
